@@ -11,8 +11,8 @@
                     <span><input type="range" min="1" max="15" v-model="lineWidth"></span>
                 </li>
                 <li @click="clearCanvas" id="clear">
-                    <i class="fas fa-eraser"></i>
-                    <span>Clear</span>
+                    <i class="far fa-trash-alt"></i>
+                    <span>Clear all</span>
                 </li>
             </ul>
         </div>
@@ -30,6 +30,7 @@ export default {
         return {
             context: null,
             isDrawing: false,
+            isClearing: false,
             lineColor: '',
             lineWidth: 5
         }
@@ -38,11 +39,17 @@ export default {
     methods: {
         startDrawing(e) {
             this.isDrawing = true;
+            if(this.isLeftButton()) {
+                this.context.globalCompositeOperation = "source-over";
+            } else {
+                this.context.globalCompositeOperation = "destination-out";
+            }
             this.draw(e);
         },
 
         stopDrawing() {
             this.isDrawing = false;
+            this.isClearing = false;
             this.context.beginPath();
         },
 
@@ -57,6 +64,15 @@ export default {
             this.context.moveTo(e.clientX, e.clientY);
         },
 
+        isLeftButton(e) {
+            e = e || window.event;
+            if ("buttons" in e) {
+                return e.buttons == 1;
+            }
+            var button = e.which || e.button;
+            return button == 1;
+        },
+
         clearCanvas() {
             this.context.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -67,6 +83,7 @@ export default {
         this.context = canvas.getContext("2d");
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
+        window.addEventListener("contextmenu", e => e.preventDefault());
     }
     
 }
@@ -154,5 +171,9 @@ i {
 
 #clear {
     cursor: pointer;
+}
+
+::selection {
+    background: transparent;
 }
 </style>
