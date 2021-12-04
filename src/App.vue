@@ -8,7 +8,7 @@
                 </li>
                 <li>
                     <i class="fas fa-check-double"></i>
-                    <span><input type="range" min="1" max="15" v-model="lineWidth"></span>
+                    <span><input type="range" min="1" max="30" v-model="lineWidth"></span>
                 </li>
                 <li @click="clearCanvas" id="clear">
                     <i class="far fa-trash-alt"></i>
@@ -20,11 +20,13 @@
     <canvas id="canvas"
         @mousedown="startDrawing"
         @mouseup="stopDrawing"
+        @mouseout="stopDrawing"
         @mousemove="draw"
     ></canvas>
 </template>
 
 <script>
+import {HubConnectionBuilder} from '@aspnet/signalr'
 export default {
     data() {
         return {
@@ -32,7 +34,8 @@ export default {
             isDrawing: false,
             isClearing: false,
             lineColor: '',
-            lineWidth: 5
+            lineWidth: 5,
+            connection: null
         }
     },
 
@@ -55,13 +58,21 @@ export default {
 
         draw(e) {
             if(!this.isDrawing) return;
+            const x = e.clientX;
+            const y = e.clientY;
+            this.drawCanvas(x, y);
+            this.connection.invoke('Draw', x, y);
+        },
+
+        drawCanvas(x, y) {
             this.context.lineWidth = this.lineWidth;
             this.context.strokeStyle = this.lineColor;
             this.context.lineCap = "round";
-            this.context.lineTo(e.clientX, e.clientY);
+            this.context.lineJoin = "round";
+            this.context.lineTo(x, y);
             this.context.stroke();
             this.context.beginPath();
-            this.context.moveTo(e.clientX, e.clientY);
+            this.context.moveTo(x, y);
         },
 
         isLeftButton(e) {
@@ -84,6 +95,14 @@ export default {
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
         window.addEventListener("contextmenu", e => e.preventDefault());
+        this.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
+        this.connection.start();
+        this.connection.on('draw', (x, y) => this.drawCanvas(x, y));
+        console.log(this.connection);
+    },
+
+    beforeUnmount() {
+        connection.off('draw', this.drawCanvas);
     }
     
 }
@@ -94,6 +113,7 @@ export default {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 @import url('//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css');
@@ -175,5 +195,13 @@ i {
 
 ::selection {
     background: transparent;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+#canvas {
+    overflow: scroll;
 }
 </style>
