@@ -1,22 +1,5 @@
 <template>
-    <aside class="sidebar">
-        <div id="leftside-navigation" class="nano">
-            <ul class="nano-content">
-                <li>
-                    <i class="fas fa-palette"></i>
-                    <span id="colorInput"><input type="color" v-model="lineColor"></span>
-                </li>
-                <li>
-                    <i class="fas fa-check-double"></i>
-                    <span><input type="range" min="1" max="30" v-model="lineWidth"></span>
-                </li>
-                <li @click="clearCanvas" id="clear">
-                    <i class="far fa-trash-alt"></i>
-                    <span>Clear all</span>
-                </li>
-            </ul>
-        </div>
-    </aside>
+    <side-bar @clearCanvas="clearCanvas"></side-bar>
     <canvas id="canvas"
         @mousedown="startDrawing"
         @mouseup="stopDrawing"
@@ -27,21 +10,29 @@
 
 <script>
 import {HubConnectionBuilder} from '@aspnet/signalr'
+import SideBar from '@/components/SideBar.vue'
+import {mapState, mapMutations} from 'vuex'
 export default {
+    components: {
+        SideBar
+    },
+
     data() {
         return {
             context: null,
             canvas: null,
             isDrawing: false,
             isClearing: false,
-            lineColor: '',
-            lineWidth: 5,
-            connection: null,
-            canvasData: []
+            connection: null
         }
     },
 
     methods: {
+        ...mapMutations({
+            setLineColor: 'drawOptions/setLineColor',
+            setLineWidth: 'drawOptions/setLineWidth'
+        }),
+
         startDrawing(e) {
             this.isDrawing = true;
             if(this.isLeftButton()) {
@@ -101,6 +92,13 @@ export default {
         }
     },
 
+    computed: {
+        ...mapState({
+            lineColor: state => state.drawOptions.lineColor,
+            lineWidth: state => state.drawOptions.lineWidth
+        })
+    },
+
     mounted() {
         const canvas = document.querySelector("#canvas");
         this.context = canvas.getContext("2d");
@@ -111,8 +109,8 @@ export default {
         this.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
         this.connection.start();
         this.connection.on('draw', (x, y, color, width, globalCompositeOperation) => {
-            this.lineColor = color;
-            this.lineWidth = width;
+            this.setLineColor(color);
+            this.setLineWidth(width);
             this.context.globalCompositeOperation = globalCompositeOperation;
             this.drawCanvas(x, y)
         });
@@ -170,60 +168,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.sidebar {
-    width: 200px;
-    height: 100%;
-    background: #293949;
-    position: absolute;
-    -webkit-transition: all 0.3s ease-in-out;
-    -moz-transition: all 0.3s ease-in-out;
-    -o-transition: all 0.3s ease-in-out;
-    -ms-transition: all 0.3s ease-in-out;
-    transition: all 0.3s ease-in-out;
-    z-index: 100;
-}
-
-.sidebar #leftside-navigation ul {
-    margin: -2px 0 0;
-    padding: 0;
-}
-
-.sidebar #leftside-navigation ul li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    list-style-type: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 10px;
-}
-i {
-    color: white;
-    padding: 5px;
-}
-
-#colorInput {
-    width: 129px;
-}
-
-#colorInput input {
-    width: 100%;
-}
-
-#clear {
-    cursor: pointer;
-}
-
 ::selection {
     background: transparent;
 }
 
 ::-webkit-scrollbar {
     display: none;
-}
-
-#canvas {
-    overflow: scroll;
 }
 </style>
