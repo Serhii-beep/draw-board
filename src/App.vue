@@ -31,11 +31,13 @@ export default {
     data() {
         return {
             context: null,
+            canvas: null,
             isDrawing: false,
             isClearing: false,
             lineColor: '',
             lineWidth: 5,
-            connection: null
+            connection: null,
+            canvasData: []
         }
     },
 
@@ -51,6 +53,11 @@ export default {
         },
 
         stopDrawing() {
+            this.stop();
+            this.connection.invoke("StopDrawing");
+        },
+
+        stop() {
             this.isDrawing = false;
             this.isClearing = false;
             this.context.beginPath();
@@ -61,7 +68,7 @@ export default {
             const x = e.clientX;
             const y = e.clientY;
             this.drawCanvas(x, y);
-            this.connection.invoke('Draw', x, y);
+            this.connection.invoke('Draw', x, y, this.lineColor, parseInt(this.lineWidth), this.context.globalCompositeOperation);
         },
 
         drawCanvas(x, y) {
@@ -85,7 +92,12 @@ export default {
         },
 
         clearCanvas() {
-            this.context.clearRect(0, 0, canvas.width, canvas.height);
+            this.clear();
+            this.connection.invoke("Clear");
+        },
+
+        clear() {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
     },
 
@@ -94,15 +106,25 @@ export default {
         this.context = canvas.getContext("2d");
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
+        this.canvas = canvas;
         window.addEventListener("contextmenu", e => e.preventDefault());
         this.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
         this.connection.start();
-        this.connection.on('draw', (x, y) => this.drawCanvas(x, y));
+        this.connection.on('draw', (x, y, color, width, globalCompositeOperation) => {
+            this.lineColor = color;
+            this.lineWidth = width;
+            this.context.globalCompositeOperation = globalCompositeOperation;
+            this.drawCanvas(x, y)
+        });
+        this.connection.on('clear', () => this.clear());
+        this.connection.on('stopDrawing', () => this.stop());
         console.log(this.connection);
     },
 
     beforeUnmount() {
-        connection.off('draw', this.drawCanvas);
+        this.connection.off('draw', this.drawCanvas);
+        this.connection.off('clear', this.clear);
+        this.connection.off('stopDrawing', this.stop);
     }
     
 }
