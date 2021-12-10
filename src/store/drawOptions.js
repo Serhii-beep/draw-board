@@ -10,7 +10,6 @@ export const drawOptions = {
         },
 
         setLineWidth(state, lineWidth) {
-            console.log(lineWidth);
             state.lineWidth = lineWidth;
         }
     },

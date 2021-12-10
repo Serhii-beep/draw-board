@@ -32,8 +32,9 @@
 import {mapState, mapMutations} from 'vuex'
 export default {
     emits: [
-        'clearCanvas'
+        "clearCanvas"
     ],
+
     methods: {
         ...mapMutations({
             setLineColor: 'drawOptions/setLineColor',

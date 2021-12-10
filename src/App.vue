@@ -1,20 +1,16 @@
 <template>
     <side-bar @clearCanvas="clearCanvas"></side-bar>
-    <canvas id="canvas"
-        @mousedown="startDrawing"
-        @mouseup="stopDrawing"
-        @mouseout="stopDrawing"
-        @mousemove="draw"
-    ></canvas>
+    <my-canvas ref="canvas"></my-canvas>
 </template>
 
 <script>
-import {HubConnectionBuilder} from '@aspnet/signalr'
-import SideBar from '@/components/SideBar.vue'
-import {mapState, mapMutations} from 'vuex'
+import SideBar from '@/components/SideBar'
+import MyCanvas from '@/components/MyCanvas.vue';
+import { mapMutations } from 'vuex'
 export default {
     components: {
-        SideBar
+        SideBar,
+        MyCanvas
     },
 
     data() {
@@ -29,85 +25,19 @@ export default {
 
     methods: {
         ...mapMutations({
-            setLineColor: 'drawOptions/setLineColor',
-            setLineWidth: 'drawOptions/setLineWidth'
+            setConnection: 'setConnection'
         }),
 
-        startDrawing(e) {
-            this.isDrawing = true;
-            if(this.isLeftButton()) {
-                this.context.globalCompositeOperation = "source-over";
-            } else {
-                this.context.globalCompositeOperation = "destination-out";
-            }
-            this.draw(e);
-        },
-
-        stopDrawing() {
-            this.stop();
-            this.connection.invoke("StopDrawing");
-        },
-
-        stop() {
-            this.isDrawing = false;
-            this.isClearing = false;
-            this.context.beginPath();
-        },
-
-        draw(e) {
-            if(!this.isDrawing) return;
-            const x = e.clientX;
-            const y = e.clientY;
-            this.drawCanvas(x, y);
-            this.connection.invoke('Draw', x, y, this.lineColor, parseInt(this.lineWidth), this.context.globalCompositeOperation);
-        },
-
-        drawCanvas(x, y) {
-            this.context.lineWidth = this.lineWidth;
-            this.context.strokeStyle = this.lineColor;
-            this.context.lineCap = "round";
-            this.context.lineJoin = "round";
-            this.context.lineTo(x, y);
-            this.context.stroke();
-            this.context.beginPath();
-            this.context.moveTo(x, y);
-        },
-
-        isLeftButton(e) {
-            e = e || window.event;
-            if ("buttons" in e) {
-                return e.buttons == 1;
-            }
-            var button = e.which || e.button;
-            return button == 1;
-        },
-
         clearCanvas() {
-            this.clear();
-            this.connection.invoke("Clear");
-        },
-
-        clear() {
-            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.$refs.canvas.clearCanvas();
         }
     },
 
-    computed: {
-        ...mapState({
-            lineColor: state => state.drawOptions.lineColor,
-            lineWidth: state => state.drawOptions.lineWidth
-        })
-    },
-
     mounted() {
-        const canvas = document.querySelector("#canvas");
-        this.context = canvas.getContext("2d");
-        canvas.height = window.innerHeight;
-        canvas.width = window.innerWidth;
-        this.canvas = canvas;
         window.addEventListener("contextmenu", e => e.preventDefault());
-        this.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
-        this.connection.start();
+        this.setConnection();
+        
+        /*
         this.connection.on('draw', (x, y, color, width, globalCompositeOperation) => {
             this.setLineColor(color);
             this.setLineWidth(width);
@@ -115,8 +45,7 @@ export default {
             this.drawCanvas(x, y)
         });
         this.connection.on('clear', () => this.clear());
-        this.connection.on('stopDrawing', () => this.stop());
-        console.log(this.connection);
+        this.connection.on('stopDrawing', () => this.stop());*/
     },
 
     beforeUnmount() {

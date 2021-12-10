@@ -1,6 +1,6 @@
 import { createStore } from "vuex";
 import { drawOptions } from "@/store/drawOptions";
-import { canvas } from "@/store/canvas";
+import { HubConnectionBuilder } from '@aspnet/signalr'
 
 export default createStore({
     state: () => ({
@@ -8,8 +8,17 @@ export default createStore({
         isConnected: false
     }),
 
+    mutations: {
+        setConnection(state) {
+            if(!isConnected) {
+                state.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
+                state.connection.start();
+                state.isConnected = true;
+            }
+        }
+    },
+
     modules: {
-        drawOptions: drawOptions,
-        canvas: canvas
+        drawOptions: drawOptions
     }
 });
