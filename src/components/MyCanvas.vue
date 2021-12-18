@@ -7,7 +7,7 @@
     ></canvas>
 </template>
 <script>
-import {mapState} from 'vuex'
+import {mapState, mapMutations} from 'vuex'
 export default {
     data() {
         return {
@@ -19,6 +19,12 @@ export default {
     },
 
     methods: {
+        ...mapMutations({
+            setLineColor: 'drawOptions/setLineColor',
+            setLineWidth: 'drawOptions/setLineWidth',
+            setConnection: 'setConnection'
+        }),
+
         startDrawing(e) {
             this.isDrawing = true;
             if(this.isLeftButton()) {
@@ -34,7 +40,7 @@ export default {
             const x = e.clientX;
             const y = e.clientY;
             this.drawCanvas(x, y);
-            //this.connection.invoke('Draw', x, y, this.lineColor, parseInt(this.lineWidth), this.context.globalCompositeOperation);
+            this.connection.invoke('Draw', x, y, this.lineColor, parseInt(this.lineWidth), this.context.globalCompositeOperation);
         },
 
         drawCanvas(x, y) {
@@ -50,7 +56,7 @@ export default {
 
         stopDrawing() {
             this.stop();
-            //this.connection.invoke("StopDrawing");
+            this.connection.invoke("StopDrawing");
         },
 
         stop() {
@@ -70,7 +76,7 @@ export default {
 
         clearCanvas() {
             this.clear();
-            //this.connection.invoke("Clear");
+            this.connection.invoke("Clear");
         },
 
         clear() {
@@ -83,12 +89,30 @@ export default {
         this.context = canvas.getContext("2d");
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
-        this.canvas = canvas;
+        this.canvas = canvas;  
+        if(!this.isConnected) {
+            this.setConnection();
+        }      
+        this.connection.on('draw', (x, y, color, width, globalCompositeOperation) => {
+            this.setLineColor(color);
+            this.setLineWidth(width);
+            this.context.globalCompositeOperation = globalCompositeOperation;
+            this.drawCanvas(x, y)
+        });
+        this.connection.on('clear', () => this.clear());
+        this.connection.on('stopDrawing', () => this.stop());
+    },
+
+        beforeUnmount() {
+        this.connection.off('draw', this.drawCanvas);
+        this.connection.off('clear', this.clear);
+        this.connection.off('stopDrawing', this.stop);
     },
 
     computed: {
         ...mapState({
             connection: state => state.connection,
+            isConnected: state => state.isConnected,
             lineColor: state => state.drawOptions.lineColor,
             lineWidth: state => state.drawOptions.lineWidth
         })

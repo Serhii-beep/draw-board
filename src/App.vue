@@ -24,10 +24,6 @@ export default {
     },
 
     methods: {
-        ...mapMutations({
-            setConnection: 'setConnection'
-        }),
-
         clearCanvas() {
             this.$refs.canvas.clearCanvas();
         }
@@ -35,23 +31,6 @@ export default {
 
     mounted() {
         window.addEventListener("contextmenu", e => e.preventDefault());
-        this.setConnection();
-        
-        /*
-        this.connection.on('draw', (x, y, color, width, globalCompositeOperation) => {
-            this.setLineColor(color);
-            this.setLineWidth(width);
-            this.context.globalCompositeOperation = globalCompositeOperation;
-            this.drawCanvas(x, y)
-        });
-        this.connection.on('clear', () => this.clear());
-        this.connection.on('stopDrawing', () => this.stop());*/
-    },
-
-    beforeUnmount() {
-        this.connection.off('draw', this.drawCanvas);
-        this.connection.off('clear', this.clear);
-        this.connection.off('stopDrawing', this.stop);
     }
     
 }

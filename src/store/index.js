@@ -10,7 +10,7 @@ export default createStore({
 
     mutations: {
         setConnection(state) {
-            if(!isConnected) {
+            if(!state.isConnected) {
                 state.connection = new HubConnectionBuilder().withUrl("https://localhost:44348/draw").build();
                 state.connection.start();
                 state.isConnected = true;
